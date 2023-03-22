@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Se chegou aqui é porque a mensagem foi enviada.</h1>
+    <p>Estamos trabalhando para resgatar sua mensagem e exibí-la aqui.</p>
+    <a href="http://127.0.0.1:5500/index.html">Voltar</a>
+      
+<table id="contactTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+
+        <th>Name</th>
+        <th>Email</th>
+        <th>Message</th>
+        <th>Actions</th>
+        
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Table rows will be dynamically generated here -->
+    </tbody>
+  </table>
+
+    <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.2/firebase-database.js"></script>
+    <script src="app.js"></script>
+    <script>
+
+    // Listen for changes to the data in the contactForm node
+    contactFormDB.on('value', function(snapshot) {
+      // Clear the table before adding new rows
+      const tbody = document.querySelector('#contactTable tbody');
+      tbody.innerHTML = '';
+  
+      snapshot.forEach(function(childSnapshot) {
+      const message = childSnapshot.val();
+      const tr = document.createElement('tr');
+
+      const tdId = document.createElement('td');
+      tdId.textContent = childSnapshot.key;
+      tr.appendChild(tdId);
+      tr.setAttribute('id', childSnapshot.key);
+
+      // Add the rest of the table data to the row
+      const tdName = document.createElement('td');
+      tdName.textContent = message.name;
+      tr.appendChild(tdName);
+      
+      const tdEmail = document.createElement('td');
+      tdEmail.textContent = message.emailId;
+      tr.appendChild(tdEmail);
+      
+      const tdMsg = document.createElement('td');
+      tdMsg.textContent = message.msgContent;
+      tr.appendChild(tdMsg);
+      
+      const tdEdit = document.createElement('td');
+      const btnEdit = document.createElement('a');
+      btnEdit.textContent = 'Edit';
+      btnEdit.setAttribute('href', `edit.html?id=${childSnapshot.key}&name=${message.name}&message=${message.msgContent}`);
+      tdEdit.appendChild(btnEdit);
+      tr.appendChild(tdEdit);
+      
+      const tdDelete = document.createElement('td');
+      const btnDelete = document.createElement('a');
+      btnDelete.textContent = 'Delete';
+      btnDelete.setAttribute('href', '#');
+      tdDelete.appendChild(btnDelete);
+      tr.appendChild(tdDelete);
+
+          // Add event listener to the delete button
+        btnDelete.addEventListener('click', function(event) {
+          event.preventDefault();
+          const rowId = event.target.parentNode.parentNode.getAttribute('id');
+          const rowRef = contactFormDB.child(rowId);
+          rowRef.remove();
+          tr.remove();
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      // Update the form submission function
+      function submitForm(e) {
+        e.preventDefault();
+        var name = getElementValue('name');
+        var emailId = getElementValue('emailId');
+        var msgContent = getElementValue('msgContent');
+        var messageId = getElementValue('messageId');
+        if (messageId) {
+          // Editing an existing message
+          const messageRef = contactFormDB.child(messageId);
+          messageRef.update({
+            name: name,
+            emailId: emailId,
+            msgContent: msgContent
+          })
+          .then(() => {
+            clearForm();
+            document.getElementById('submitButton').value = 'Submit';
+            document.getElementById('messageId').value = '';
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+        } else {
+          // Creating a new message
+          const newMessageRef = contactFormDB.push();
+          messageId = newMessageRef.getKey();
+          newMessageRef.set({
+            name: name,
+            emailId: emailId,
+            msgContent: msgContent
+          })
+          .then(() => {
+            clearForm();
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+        }
+      }
+    });
+    </script>
+
+  </script>
+</body>
+</html>
